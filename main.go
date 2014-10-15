@@ -1,9 +1,10 @@
 package main
 
 import (
-	"html/template"
+	// "encoding/xml"
+	"fmt"
+	"gopkg.in/unrolled/render.v1"
 	"net/http"
-	"path"
 )
 
 type Profile struct {
@@ -12,22 +13,26 @@ type Profile struct {
 }
 
 func main() {
-	http.HandleFunc("/", foo)
-	http.ListenAndServe(":3000", nil)
-}
+	r := render.New(render.Options{})
+	mux := http.NewServeMux()
 
-func foo(w http.ResponseWriter, r *http.Request) {
-	profile := Profile{"Alex", []string{"snowboarding", "programming"}}
+	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		w.Write([]byte("Welcome. visit sub page now."))
+	})
 
-	fp := path.Join("templates", "index.html")
+	mux.HandleFunc("/data", func(w http.ResponseWriter, req *http.Request) {
+		r.Data(w, http.StatusOK, []byte("Some binary data here."))
+	})
 
-	tmpl, err := template.ParseFiles(fp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	mux.HandleFunc("/json", func(w http.ResponseWriter, req *http.Request) {
+		r.JSON(w, http.StatusOK, map[string]string{"hello": "json"})
+	})
 
-	if err := tmpl.Execute(w, profile); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	mux.HandleFunc("/html", func(w http.ResponseWriter, req *http.Request) {
+		// Assumes you have a template in ./templates called "example.tmpl"
+		// $ mkdir -p templates && echo "<h1>Hello {{.}}.</h1>" > templates/example.tmpl
+		r.HTML(w, http.StatusOK, "example", nil)
+	})
+	fmt.Println("Server starting")
+	http.ListenAndServe(":3000", mux)
 }
