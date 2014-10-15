@@ -1,56 +1,30 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gorilla/mux"
+	"encoding/json"
 	"net/http"
 )
 
+type Profile struct {
+	Name   string
+	Hobbie []string
+}
+
 func main() {
-
-	r := mux.NewRouter().StrictSlash(true)
-	r.HandleFunc("/", HomeHandler)
-
-	posts := r.Path("/posts").Subrouter()
-	posts.Methods("GET").HandlerFunc(PostsIndexHandler)
-	posts.Methods("POST").HandlerFunc(PostsCreateHandler)
-
-	post := r.PathPrefix("posts/{id}/").Subrouter()
-	post.Methods("GET").Path("/edit").HandlerFunc(PostEditHandler)
-	post.Methods("GET").HandlerFunc(PostShowHandler)
-	post.Methods("PUT", "POST").HandlerFunc(PostUpdateHandler)
-	post.Methods("DELETE").HandlerFunc(PostDeleteHandler)
-
-	fmt.Println("Starting server on :3000")
-	http.ListenAndServe(":3000", r)
-
+	http.HandleFunc("/", ProfileHandler)
+	http.ListenAndServe(":8080", nil)
 }
 
-func HomeHandler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(rw, "Home")
-}
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	profile := Profile{"Alex", []string{"snowboarding", "programming"}}
 
-func PostsIndexHandler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(rw, "post index")
-}
+	js, err := json.Marshal(profile)
 
-func PostsCreateHandler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(rw, "post create")
-}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-func PostShowHandler(rw http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)["id"]
-	fmt.Fprint(rw, "showing post", id)
-}
-
-func PostUpdateHandler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(rw, "post update")
-}
-
-func PostDeleteHandler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(rw, "post delete")
-}
-
-func PostEditHandler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(rw, "post edit")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
