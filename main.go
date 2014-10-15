@@ -1,8 +1,9 @@
 package main
 
 import (
-	"encoding/json"
+	"html/template"
 	"net/http"
+	"path"
 )
 
 type Profile struct {
@@ -11,20 +12,22 @@ type Profile struct {
 }
 
 func main() {
-	http.HandleFunc("/", ProfileHandler)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/", foo)
+	http.ListenAndServe(":3000", nil)
 }
 
-func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+func foo(w http.ResponseWriter, r *http.Request) {
 	profile := Profile{"Alex", []string{"snowboarding", "programming"}}
 
-	js, err := json.Marshal(profile)
+	fp := path.Join("templates", "index.html")
 
+	tmpl, err := template.ParseFiles(fp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	if err := tmpl.Execute(w, profile); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
